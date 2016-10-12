@@ -1,0 +1,5 @@
+database:
+  host: localhost
+  dbname: test_where_in_and_tmp_table
+  user: postgres
+  password:
