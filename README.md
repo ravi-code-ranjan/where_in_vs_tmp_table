@@ -1,5 +1,5 @@
-# Compare WHERE IN, WHERE ANY with TEMP TABLE
-This benchmark aims to compare PostgreSQL queries among `WHERE IN (...)`, ``WHERE ANY (...)` and `TEMP TABLE` in Ruby.
+# Compare WHERE IN with TEMP TABLE
+This benchmark aims to compare PostgreSQL queries among `WHERE IN (...)`, `WHERE ANY (...)` and `TEMP TABLE` in Ruby.
 
 ## Test Case
 Given a `requests` table with schema like this:
