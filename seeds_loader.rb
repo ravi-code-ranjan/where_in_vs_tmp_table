@@ -41,7 +41,6 @@ class SeedsLoader
     (1..num_requests).each_slice(100) do |slice|
       insert_records(slice.length)
     end
-    puts 'Done'
 
   rescue => error
     puts "Error: #{error.message}"
@@ -51,8 +50,10 @@ class SeedsLoader
     drop_table if db_connection
   end
 
+  private
+
   def insert_records(num_records)
-    inserts = num_records.times.map do
+    inserts = Array.new(num_records) do
       "('#{rand_account_id}', '#{rand_request_date}', '#{rand_total}')"
     end
     db_connection.exec %{
@@ -85,8 +86,6 @@ class SeedsLoader
     puts "Droping 'requests' table if exists ..."
     db_connection.exec 'DROP TABLE IF EXISTS "requests" CASCADE;'
   end
-
-  private
 
   def rand_account_id
     rand(1..num_accounts)

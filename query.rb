@@ -6,18 +6,22 @@ class Query
     @account_ids = account_ids
   end
 
-  def use_join_tmp_table
+  def use_tmp_table
     db_connection.transaction do
       db_connection.exec(create_temp_table)
       db_connection.copy_data('COPY tmp_accounts (account_id) FROM STDIN') do
         account_ids_inserts.each { |chunk| db_connection.put_copy_data(chunk) }
       end
-      db_connection.exec query_requests_with_join_table
+      db_connection.exec join_temp_table_sql
     end
   end
 
-  def use_in_clause
-    db_connection.exec query_requests
+  def use_where_in
+    db_connection.exec where_in_sql
+  end
+
+  def use_where_any
+    db_connection.exec where_any_sql
   end
 
   private
@@ -29,7 +33,7 @@ class Query
 
   # get sum of requests in a date range for certain accounts
   # this query uses `IN` clause
-  def query_requests
+  def where_in_sql
     %{
       SELECT account_id, SUM(total) AS total_requests
       FROM requests r
@@ -39,11 +43,22 @@ class Query
   end
 
   # query using JOIN a temp table
-  def query_requests_with_join_table
+  def join_temp_table_sql
     %{
       SELECT r.account_id, SUM(total) AS total_requests
       FROM requests r
       INNER JOIN tmp_accounts ON tmp_accounts.account_id = r.account_id
+      GROUP BY r.account_id
+    }
+  end
+
+  # query using ANY VALUES (), (), ...
+  def where_any_sql
+    values = account_ids.map { |x| "(#{x})" }.join(',')
+    %{
+      SELECT account_id, SUM(total) AS total_requests
+      FROM requests r
+      WHERE r.account_id = ANY ( VALUES #{values} )
       GROUP BY r.account_id
     }
   end
