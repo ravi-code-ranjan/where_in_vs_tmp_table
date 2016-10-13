@@ -16,7 +16,7 @@ CREATE TABLE "requests" (
 Write a sql query that returns the sum of `total`, group by `account_id` for a given list of `account_ids`.
 
 ## Approach 1: Use 'WHERE IN'
-The 1st approach uses `WHERE IN (...)` clause, where the `(...)` is a list of `account_ids`:
+This approach uses `WHERE IN (...)` clause, where the `(...)` is a list of `account_ids`:
 ```sql
 SELECT account_id, SUM(total) AS total_requests
 FROM requests r
@@ -24,8 +24,17 @@ WHERE r.account_id IN (1,2,3,4, ...)
 GROUP BY r.account_id
 ```
 
-## Approach 2: Use 'TEMP TABLE'
-The 2nd approach creates a `TEMP TABLE` called `tmp_accounts`, which only includes those selected `account_ids`:
+## Approach 2: Use 'WHERE ANY'
+This approach uses `WHERE ANY ( VALUES (), ... )` clause, where the ` VALUES (), () ...` contains values from `account_ids`:
+```sql
+SELECT account_id, SUM(total) AS total_requests
+FROM requests r
+WHERE r.account_id = ANY ( VALUES (1), (2), (3), ... )
+GROUP BY r.account_id
+```
+
+## Approach 3: Use 'TEMP TABLE'
+This approach creates a `TEMP TABLE` called `tmp_accounts`, which only includes those selected `account_ids`:
 ```sql
 CREATE TEMP TABLE tmp_accounts (
   "account_id" INT8,
@@ -47,27 +56,33 @@ Note that the temp table will get dropped after the transaction.
 
 2. Run `bundle install`
 
-3. Run `bundle exec ruby benchmark.rb`.
+3. Modify default settings in `benchmark.rb`
 
-The code will create the database, create the `requests` table, seed random data, and then run the benchmark. After the benchmark, it will drop the database.
+4. Run `bundle exec ruby benchmark.rb`.
 
-By default, the code will generate `500,000` rows of requests for `5,000` account ids. And it will randomly choose `50%` of the account ids for the query. You can tune these settings inside [benchmark.rb](benchmark.rb).
+The code will create the database, create the `requests` table, seed random data, and then run the benchmark, and after that, it will drop the database.
+
+By default, the code will generate `500,000` rows of requests for `5,000` account ids. Then it will randomly choose `50%` of the account ids for the queries, and run each query only `1` time. You can tune these settings inside [benchmark.rb](benchmark.rb).
 
 ## Benchmark Results
-My laptop specs: Macbook Pro 2.2GHz Intel Core i7, 16GB Memory, 250 GB SSD
+Hardware specs: Macbook Pro 2.2GHz Intel Core i7, 16GB Memory, 250 GB SSD
 
-500,000 rows of requests with 5,000 account ids, and select 50% of the account ids for the query.
+Database: PostgreSQL 9.4.5
 
-When the index on `account_id` column is disabled, by setting the variable `index_account_id` to `false` in `benchmark.rb`:
+Seeds: 500,000 rows of requests, 5,000 account ids, and randomly choose 50% of the account ids.
+
+When the index on `account_id` column is enabled, by setting the variable `index_account_id` to `true` in `benchmark.rb`:
 ```bash
-user                system     total      real
-use_in_clause       0.010000   0.000000   0.010000 (  6.152411)
-use_join_tmp_table  0.000000   0.000000   0.000000 (  0.223172)
+                    user     system      total        real
+use_where_in    0.000000   0.000000   0.000000 (  0.242052)
+use_where_any   0.010000   0.000000   0.010000 (  0.219573)
+use_tmp_table   0.000000   0.000000   0.000000 (  0.193532)
 ```
 
-When `index_account_id = true`, the results are:
+When there is no index on `account_id`, the results are:
 ```bash
-user                system     total      real
-use_in_clause       0.000000   0.000000   0.000000 (  0.246094)
-use_join_tmp_table  0.000000   0.000000   0.000000 (  0.205016)
+                    user     system      total        real
+use_where_in    0.000000   0.000000   0.000000 (  6.290538)
+use_where_any   0.000000   0.000000   0.000000 (  0.192422)
+use_tmp_table   0.000000   0.000000   0.000000 (  0.193068)
 ```

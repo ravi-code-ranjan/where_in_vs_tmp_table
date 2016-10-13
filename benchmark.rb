@@ -32,9 +32,9 @@ if index_account_id
 else
   puts 'Results without index on account_id'
 end
-Benchmark.bm do |x|
-  x.report('use_where_any') { iterations.times { query.use_where_any } }
+Benchmark.bm(13) do |x|
   x.report('use_where_in') { iterations.times { query.use_where_in } }
+  x.report('use_where_any') { iterations.times { query.use_where_any } }
   x.report('use_tmp_table') { iterations.times { query.use_tmp_table } }
 end
 puts '=================================='
