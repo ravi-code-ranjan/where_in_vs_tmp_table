@@ -1,6 +1,8 @@
 # Compare WHERE IN with TEMP TABLE
 This benchmark aims to compare PostgreSQL queries among `WHERE IN (...)`, `WHERE ANY (...)` and `TEMP TABLE` in Ruby.
 
+Blog post: http://stevenyue.com/blogs/build-sql-queries-with-temporary-table-vs-where-in/
+
 ## Test Case
 Given a `requests` table with schema like this:
 
